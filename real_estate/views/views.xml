@@ -17,13 +17,13 @@
             domain="['|', ('active', '=', False), ('active', '=', True)]" />
           <separator />
           <field name="state" />
-          <filter string="New" name="state.new" domain="[('state',  '=', '1')]" />
+          <filter string="New" name="state.new" domain="[('state', '=', '1')]" />
           <filter string="Offer Received" name="state.offer_received"
-            domain="[('state',  '=', '2')]" />
+            domain="[('state', '=', '2')]" />
           <filter string="Offer Accepted" name="state.offer_accepted"
-            domain="[('state',  '=', '3')]" />
-          <filter string="Sold" name="state.sold" domain="[('state',  '=', '4')]" />
-          <filter string="Canceled" name="state.canceled" domain="[('state',  '=', '5')]" />
+            domain="[('state', '=', '3')]" />
+          <filter string="Sold" name="state.sold" domain="[('state', '=', '4')]" />
+          <filter string="Canceled" name="state.canceled" domain="[('state', '=', '5')]" />
         </search>
       </field>
     </record>
@@ -32,14 +32,16 @@
       <field name="name">real_estate.list</field>
       <field name="model">real_estate.real_estate</field>
       <field name="arch" type="xml">
-        <tree>
+        <tree decoration-success="state=='2' or '3'" decoration-bf="state=='3'">
           <field name="name" />
           <field name="postcode" />
+          <field name="estate_tag" string="Tags" widget="many2many_tags"
+            options="{'color_field': 'color'}" />
           <field name="bedrooms" />
           <field name="living_area" />
           <field name="expected_price" />
           <field name="selling_price" />
-          <field name="date_availability" />
+          <field name="state" invisible="1" />
         </tree>
       </field>
     </record>
@@ -63,6 +65,18 @@
             <h1>
               <field name="name" />
             </h1>
+            <notebook>
+              <page string="Properties">
+                <field name="sequence" widget="handle" />
+                <field name="properties">
+                  <tree>
+                    <field name="name" />
+                    <field name="expected_price" />
+                    <field name="state" />
+                  </tree>
+                </field>
+              </page>
+            </notebook>
           </sheet>
         </form>
       </field>
@@ -82,12 +96,18 @@
       <field name="name">real_estate_offer.list</field>
       <field name="model">real_estate.real_estate_offer</field>
       <field name="arch" type="xml">
-        <tree>
+        <tree decoration-success="status=='1'" decoration-danger="status=='2'">
           <field name="price" />
           <field name="partner" string="Partner" />
-          <field name="status" />
           <field name="validity_days" />
           <field name="deadline" />
+          <button name="accept_offer"
+            type="object" icon="fa-check"
+            attrs="{'invisible': [('status','!=',False)]}" />
+          <button name="refuse_offer"
+            type="object" icon="fa-times"
+            attrs="{'invisible': [('status','!=',False)]}" />
+          <field name="status" invisible="1" />
         </tree>
       </field>
     </record>
@@ -129,11 +149,17 @@
       <field name="model">real_estate.real_estate</field>
       <field name="arch" type="xml">
         <form string="New House">
+          <header>
+            <button name="sell_property" type="object" string="Sell" />
+            <button name="cancel_property" type="object" string="Cancel" />
+            <field name="state" widget="statusbar" />
+          </header>
           <sheet>
             <h1>
               <field name="name" />
             </h1>
-            <field name="estate_tag" widget="many2many_tags" decoration-success="estate_type" />
+            <field name="estate_tag" widget="many2many_tags" options="{'color_field': 'color'}"
+              decoration-success="estate_type" />
             <group>
               <group>
                 <field name="estate_type" string='Property Type' />
@@ -142,6 +168,7 @@
               </group>
               <group>
                 <field name="expected_price" />
+                <field name="best_price" />
                 <field name="selling_price" />
               </group>
               <notebook>
@@ -153,16 +180,13 @@
                     <field name="facades" />
                     <field name="garage" />
                     <field name="garden" />
-                    <field name="garden_area" attrs="{'readonly': [('garden', '=', 'False')]}" />
-                    <field name="garden_orientation"
-                      attrs="{'readonly': [('garden', '=', 'False')]}" />
+                    <field name="garden_area" attrs="{'invisible':[('garden','=',False)]}" />
+                    <field name="garden_orientation" attrs="{'invisible':[('garden','=',False)]}" />
                     <field name="total_area" string="Total Area (sqm)" />
                   </group>
                 </page>
                 <page string="Offers">
-                  <group>
-                    <field name="estate_offer_ids" />
-                  </group>
+                  <field name="estate_offer_ids" />
                 </page>
                 <page string="Other Info">
                   <group>
